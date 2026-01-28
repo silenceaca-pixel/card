@@ -90,11 +90,23 @@
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase Setup
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'reward-card-app';
+       <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCT-ZuIDrI66NTZ0ZEipDmpfFxbEZrmGto",
+    authDomain: "card-5d320.firebaseapp.com",
+    projectId: "card-5d320",
+    storageBucket: "card-5d320.firebasestorage.app",
+    messagingSenderId: "149511398240",
+    appId: "1:149511398240:web:c381f874603c51fb74f405",
+    measurementId: "G-5FGC2VMT5J"
+  };
+
 
         let currentUser = null;
         let stamps = Array(10).fill(false);
