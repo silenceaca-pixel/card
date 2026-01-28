@@ -7,53 +7,48 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .stamp-card { aspect-ratio: 1.58 / 1; min-height: 250px; }
-        .tick-animation { animation: zoomIn 0.3s ease-out forwards; }
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        .stamp-card { aspect-ratio: 1 / 1.2; min-height: 450px; }
+        .tick-animation { animation: zoomIn 0.2s ease-out forwards; }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
+        .tab-active { @apply bg-slate-900 text-white shadow-lg; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans text-slate-800 p-4 md:p-8">
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800 p-4">
 
     <div class="max-w-2xl mx-auto flex flex-col items-center">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-slate-900 mb-2">乜都得卡</h1>
-            <p id="status" class="text-slate-500 text-sm">正在連線至雲端...</p>
+        <!-- 導覽分頁 -->
+        <nav class="flex gap-2 mb-6 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 w-full max-w-xs">
+            <button onclick="switchPage('rain')" id="tab-rain" class="flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all">Rain</button>
+            <button onclick="switchPage('car')" id="tab-car" class="flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all">Car</button>
+        </nav>
+
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-slate-900 mb-1" id="pageTitle">Rain's Stamps</h1>
+            <p id="status" class="text-slate-400 text-xs">正在連線至雲端...</p>
         </header>
 
-        <div id="cardContainer" class="stamp-card relative w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+        <!-- 卡片區域 -->
+        <div id="cardContainer" class="stamp-card relative w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
             <div id="bgOverlay" class="absolute inset-0 z-0 bg-cover bg-center opacity-90 transition-opacity"></div>
-            <div id="defaultBg" class="absolute inset-0 z-0 bg-gradient-to-br from-blue-50 to-indigo-100 opacity-50"></div>
-            <div class="absolute inset-0 z-10 p-6 flex flex-col justify-end">
-                <div id="stampGrid" class="grid grid-cols-5 gap-3 md:gap-4 mb-4 justify-items-center"></div>
+            <div id="defaultBg" class="absolute inset-0 z-0 bg-gradient-to-br from-slate-50 to-blue-50 opacity-50"></div>
+            
+            <div class="absolute inset-0 z-10 p-4 flex flex-col justify-center items-center">
+                <div id="stampGrid" class="grid grid-cols-10 gap-1 md:gap-2 w-full max-w-md">
+                    <!-- 100 格將由此生成 -->
+                </div>
             </div>
         </div>
 
-        <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-            <!-- 管理進度 -->
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <h3 class="font-semibold mb-3 flex items-center gap-2 text-slate-700">
-                    <i data-lucide="settings-2" class="w-4 h-4"></i> 管理進度
-                </h3>
-                <button id="btnRemoveLast" class="w-full bg-yellow-50 hover:bg-yellow-100 text-yellow-700 py-3 rounded-lg font-medium border border-yellow-200 transition-colors mb-3">
+        <!-- 功能區 -->
+        <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <button id="btnRemoveLast" class="w-full bg-yellow-50 hover:bg-yellow-100 text-yellow-700 py-3 rounded-xl font-medium border border-yellow-200 transition-colors">
                     移除最後一個勾
                 </button>
-                <div class="flex items-center justify-between">
-                    <span class="text-xs text-slate-500 font-medium">格子數量:</span>
-                    <div id="gridControls" class="flex gap-2">
-                        <button onclick="changeGridSize(10)" class="grid-btn px-3 py-1 text-xs rounded border bg-white border-slate-200" data-size="10">10格</button>
-                        <button onclick="changeGridSize(15)" class="grid-btn px-3 py-1 text-xs rounded border bg-white border-slate-200" data-size="15">15格</button>
-                        <button onclick="changeGridSize(20)" class="grid-btn px-3 py-1 text-xs rounded border bg-white border-slate-200" data-size="20">20格</button>
-                    </div>
-                </div>
             </div>
-
-            <!-- 卡片設定 -->
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <h3 class="font-semibold mb-3 flex items-center gap-2 text-slate-700">
-                    <i data-lucide="image" class="w-4 h-4"></i> 卡片設定
-                </h3>
-                <label class="w-full bg-slate-50 hover:bg-slate-100 text-slate-600 py-3 rounded-lg font-medium border border-slate-200 flex items-center justify-center gap-2 cursor-pointer">
-                    <i data-lucide="upload" class="w-4 h-4"></i> 上傳背景圖片
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                <label class="w-full bg-slate-50 hover:bg-slate-100 text-slate-600 py-3 rounded-xl font-medium border border-slate-200 flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="image" class="w-4 h-4"></i> 背景圖片
                     <input type="file" id="imageUpload" accept="image/*" class="hidden">
                 </label>
             </div>
@@ -81,35 +76,56 @@
         const statusEl = document.getElementById('status');
         const stampGrid = document.getElementById('stampGrid');
         
-        let stamps = Array(10).fill(false);
-        let currentUser = null;
+        let currentPage = 'rain'; // 預設頁面
+        let stamps = Array(100).fill(false);
+        let unsubscribe = null;
 
-        signInAnonymously(auth).catch(e => statusEl.innerText = "登入失敗: " + e.message);
+        // 切換頁面邏輯
+        window.switchPage = (page) => {
+            currentPage = page;
+            document.getElementById('pageTitle').innerText = (page === 'rain' ? "Rain's Stamps" : "Car's Stamps");
+            
+            // 更新 UI 選項卡
+            document.getElementById('tab-rain').className = page === 'rain' ? 'flex-1 py-2 px-4 rounded-xl text-sm font-bold tab-active' : 'flex-1 py-2 px-4 rounded-xl text-sm font-bold text-slate-400 hover:text-slate-600';
+            document.getElementById('tab-car').className = page === 'car' ? 'flex-1 py-2 px-4 rounded-xl text-sm font-bold tab-active' : 'flex-1 py-2 px-4 rounded-xl text-sm font-bold text-slate-400 hover:text-slate-600';
+            
+            subscribeToData();
+        };
+
+        signInAnonymously(auth).catch(e => statusEl.innerText = "連線失敗: " + e.message);
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                currentUser = user;
-                statusEl.innerText = "雲端同步中 (已登入)";
-                subscribeToData();
+                statusEl.innerText = "雲端同步中";
+                window.switchPage('rain');
             }
         });
 
         function subscribeToData() {
-            const docRef = doc(db, 'reward_cards', 'main_data'); 
-            onSnapshot(docRef, (snapshot) => {
+            if (unsubscribe) unsubscribe(); // 取消之前的監聽
+
+            const docId = currentPage === 'rain' ? 'rain_data' : 'car_data';
+            const docRef = doc(db, 'reward_cards', docId); 
+            
+            unsubscribe = onSnapshot(docRef, (snapshot) => {
                 if (snapshot.exists()) {
-                    const data = snapshot.data();
-                    stamps = data.stamps || Array(10).fill(false);
-                    renderStamps();
-                    updateButtonStyles(stamps.length);
+                    stamps = snapshot.data().stamps || Array(100).fill(false);
+                    // 確保始終為 100 格
+                    if (stamps.length !== 100) {
+                        stamps = stamps.slice(0, 100).concat(Array(Math.max(0, 100 - stamps.length)).fill(false));
+                    }
+                } else {
+                    stamps = Array(100).fill(false);
                 }
-            }, (err) => statusEl.innerText = "資料庫錯誤: " + err.message);
+                renderStamps();
+            }, (err) => statusEl.innerText = "錯誤: " + err.message);
         }
 
         async function saveToCloud() {
             if (!db) return;
+            const docId = currentPage === 'rain' ? 'rain_data' : 'car_data';
             try {
-                await setDoc(doc(db, 'reward_cards', 'main_data'), {
+                await setDoc(doc(db, 'reward_cards', docId), {
                     stamps: stamps,
                     updatedAt: new Date()
                 });
@@ -118,15 +134,13 @@
 
         function renderStamps() {
             stampGrid.innerHTML = '';
-            // 動態調整格子大小以適應數量
-            const sizeClass = stamps.length > 15 ? 'w-10 h-10 md:w-14 md:h-14' : 'w-12 h-12 md:w-16 md:h-16';
-            
             stamps.forEach((isTicked, index) => {
                 const btn = document.createElement('button');
-                btn.className = `${sizeClass} rounded-full border-4 flex items-center justify-center transition-all ${
-                    isTicked ? 'bg-white border-green-500 shadow-md' : 'bg-white/80 border-blue-400'
+                // 100格縮小尺寸
+                btn.className = `aspect-square rounded-full border-[1px] md:border-2 flex items-center justify-center transition-all ${
+                    isTicked ? 'bg-green-500 border-green-600' : 'bg-white/60 border-slate-300'
                 }`;
-                btn.innerHTML = isTicked ? '<i data-lucide="check" class="text-green-600 w-full h-full p-1 stroke-[4] tick-animation"></i>' : '';
+                btn.innerHTML = isTicked ? '<i data-lucide="check" class="text-white w-full h-full p-0.5 tick-animation"></i>' : '';
                 btn.onclick = () => {
                     stamps[index] = !stamps[index];
                     renderStamps();
@@ -135,34 +149,6 @@
                 stampGrid.appendChild(btn);
             });
             lucide.createIcons();
-        }
-
-        // 供外部按鈕調用的切換數量函數
-        window.changeGridSize = (newSize) => {
-            if (newSize === stamps.length) return;
-            
-            if (newSize > stamps.length) {
-                // 增加格子
-                stamps = [...stamps, ...Array(newSize - stamps.length).fill(false)];
-            } else {
-                // 減少格子（保留前面的進度）
-                stamps = stamps.slice(0, newSize);
-            }
-            renderStamps();
-            saveToCloud();
-            updateButtonStyles(newSize);
-        };
-
-        function updateButtonStyles(currentSize) {
-            document.querySelectorAll('.grid-btn').forEach(btn => {
-                if (parseInt(btn.dataset.size) === currentSize) {
-                    btn.classList.add('bg-blue-50', 'border-blue-400', 'text-blue-600');
-                    btn.classList.remove('bg-white', 'border-slate-200');
-                } else {
-                    btn.classList.remove('bg-blue-50', 'border-blue-400', 'text-blue-600');
-                    btn.classList.add('bg-white', 'border-slate-200');
-                }
-            });
         }
 
         document.getElementById('btnRemoveLast').onclick = () => {
