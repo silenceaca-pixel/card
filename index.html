@@ -11,6 +11,7 @@
         .tick-animation { animation: zoomIn 0.2s ease-out forwards; }
         @keyframes zoomIn { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
         .tab-active { @apply bg-slate-900 text-white shadow-lg; }
+        #bgOverlay { transition: background-image 0.5s ease-in-out; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800 p-4">
@@ -29,7 +30,7 @@
 
         <!-- 卡片區域 -->
         <div id="cardContainer" class="stamp-card relative w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
-            <div id="bgOverlay" class="absolute inset-0 z-0 bg-cover bg-center opacity-90 transition-opacity"></div>
+            <div id="bgOverlay" class="absolute inset-0 z-0 bg-cover bg-center opacity-90"></div>
             <div id="defaultBg" class="absolute inset-0 z-0 bg-gradient-to-br from-slate-50 to-blue-50 opacity-50"></div>
             
             <div class="absolute inset-0 z-10 p-4 flex flex-col justify-center items-center">
@@ -75,17 +76,18 @@
         const db = getFirestore(app);
         const statusEl = document.getElementById('status');
         const stampGrid = document.getElementById('stampGrid');
+        const bgOverlay = document.getElementById('bgOverlay');
+        const defaultBg = document.getElementById('defaultBg');
         
-        let currentPage = 'rain'; // 預設頁面
+        let currentPage = 'rain'; 
         let stamps = Array(100).fill(false);
+        let currentBgBase64 = null;
         let unsubscribe = null;
 
-        // 切換頁面邏輯
         window.switchPage = (page) => {
             currentPage = page;
             document.getElementById('pageTitle').innerText = (page === 'rain' ? "Rain's Stamps" : "Car's Stamps");
             
-            // 更新 UI 選項卡
             document.getElementById('tab-rain').className = page === 'rain' ? 'flex-1 py-2 px-4 rounded-xl text-sm font-bold tab-active' : 'flex-1 py-2 px-4 rounded-xl text-sm font-bold text-slate-400 hover:text-slate-600';
             document.getElementById('tab-car').className = page === 'car' ? 'flex-1 py-2 px-4 rounded-xl text-sm font-bold tab-active' : 'flex-1 py-2 px-4 rounded-xl text-sm font-bold text-slate-400 hover:text-slate-600';
             
@@ -102,22 +104,25 @@
         });
 
         function subscribeToData() {
-            if (unsubscribe) unsubscribe(); // 取消之前的監聽
+            if (unsubscribe) unsubscribe();
 
             const docId = currentPage === 'rain' ? 'rain_data' : 'car_data';
             const docRef = doc(db, 'reward_cards', docId); 
             
             unsubscribe = onSnapshot(docRef, (snapshot) => {
                 if (snapshot.exists()) {
-                    stamps = snapshot.data().stamps || Array(100).fill(false);
-                    // 確保始終為 100 格
+                    const data = snapshot.data();
+                    stamps = data.stamps || Array(100).fill(false);
+                    currentBgBase64 = data.bgImage || null;
+                    
                     if (stamps.length !== 100) {
                         stamps = stamps.slice(0, 100).concat(Array(Math.max(0, 100 - stamps.length)).fill(false));
                     }
                 } else {
                     stamps = Array(100).fill(false);
+                    currentBgBase64 = null;
                 }
-                renderStamps();
+                updateUI();
             }, (err) => statusEl.innerText = "錯誤: " + err.message);
         }
 
@@ -127,23 +132,34 @@
             try {
                 await setDoc(doc(db, 'reward_cards', docId), {
                     stamps: stamps,
+                    bgImage: currentBgBase64,
                     updatedAt: new Date()
-                });
+                }, { merge: true });
             } catch (e) { console.error("Save failed", e); }
+        }
+
+        function updateUI() {
+            // 更新背景
+            if (currentBgBase64) {
+                bgOverlay.style.backgroundImage = `url(${currentBgBase64})`;
+                defaultBg.classList.add('hidden');
+            } else {
+                bgOverlay.style.backgroundImage = 'none';
+                defaultBg.classList.remove('hidden');
+            }
+            renderStamps();
         }
 
         function renderStamps() {
             stampGrid.innerHTML = '';
             stamps.forEach((isTicked, index) => {
                 const btn = document.createElement('button');
-                // 100格縮小尺寸
                 btn.className = `aspect-square rounded-full border-[1px] md:border-2 flex items-center justify-center transition-all ${
-                    isTicked ? 'bg-green-500 border-green-600' : 'bg-white/60 border-slate-300'
+                    isTicked ? 'bg-green-500 border-green-600 shadow-sm' : 'bg-white/40 border-slate-300'
                 }`;
                 btn.innerHTML = isTicked ? '<i data-lucide="check" class="text-white w-full h-full p-0.5 tick-animation"></i>' : '';
                 btn.onclick = () => {
                     stamps[index] = !stamps[index];
-                    renderStamps();
                     saveToCloud();
                 };
                 stampGrid.appendChild(btn);
@@ -155,7 +171,6 @@
             const lastIndex = stamps.lastIndexOf(true);
             if (lastIndex !== -1) {
                 stamps[lastIndex] = false;
-                renderStamps();
                 saveToCloud();
             }
         };
@@ -163,10 +178,16 @@
         document.getElementById('imageUpload').onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
+                // 檢查文件大小（Firestore 文檔限制 1MB，建議壓縮圖片或限制大小）
+                if (file.size > 800000) {
+                    alert("圖片太大了！請上傳小於 800KB 的圖片以確保順利儲存。");
+                    return;
+                }
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    document.getElementById('bgOverlay').style.backgroundImage = `url(${event.target.result})`;
-                    document.getElementById('defaultBg').classList.add('hidden');
+                    currentBgBase64 = event.target.result;
+                    updateUI();
+                    saveToCloud();
                 };
                 reader.readAsDataURL(file);
             }
